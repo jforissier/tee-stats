@@ -62,6 +62,9 @@ struct tee_mm_pool_stats {
         uint32_t allocated;
         uint32_t max_allocated;
         uint32_t size;
+	uint32_t num_alloc_fail;
+	uint32_t biggest_alloc_fail;
+	uint32_t biggest_alloc_fail_used;
 };
 
 #define STATS_CMD_ALLOC_STATS 1
@@ -135,8 +138,10 @@ static void get_stats()
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand");
 
-	printf("HEAP: cur_alloc %u max_alloc %u heap_size %u\n",
-	        st.allocated, st.max_allocated, st.size);
+	printf("HEAP: heap_size %u cur_alloc %u max_alloc %u fail %u "
+	       "biggest_fail_size %u biggest_fail_used %u\n",
+	        st.size, st.allocated, st.max_allocated, st.num_alloc_fail,
+		st.biggest_alloc_fail, st.biggest_alloc_fail_used);
 
 	TEEC_CloseSession(&sess);
 }
