@@ -94,14 +94,27 @@ static void usage(const char *progname)
 	fprintf(stderr, "  %s -h\n", progname);
 	fprintf(stderr, "  %s [-v] [-c] [<what>]\n\n", progname);
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -c    Clear counters after getting them\n");
-	fprintf(stderr, "  -h    Print this help and exit\n");
-	fprintf(stderr, "  -v    Be verbose (use twice for greater effect)\n\n");
+	fprintf(stderr, "  -c     Clear counters after getting them\n");
+	fprintf(stderr, "  -h     Print this help and exit\n");
+	fprintf(stderr, "  -v     Be verbose (use twice for greater effect)\n\n");
 	fprintf(stderr, "Values for <what>:\n");
-	fprintf(stderr, "  heap  Print statistics about the heap (default)\n");
+	fprintf(stderr, "  heap   The main TEE core heap (default)\n");
+	fprintf(stderr, "  taheap The secure heap used to map user-mode TAs\n");
 }
 
-static void get_stats()
+static const char *heap_to_str(uint32_t id)
+{
+	switch (id) {
+	case 1:
+		return "HEAP";
+	case 3:
+		return "TAHEAP";
+	default:
+		return "???";
+	}
+}
+
+static void get_stats(uint32_t heap_id)
 {
 	TEEC_Result res;
 	TEEC_Context ctx;
@@ -129,7 +142,7 @@ static void get_stats()
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_MEMREF_TEMP_OUTPUT,
 					 TEEC_NONE, TEEC_NONE);
-	op.params[0].value.a = 1; /* Pool ID */
+	op.params[0].value.a = heap_id;
 	op.params[0].value.b = clear;
 	op.params[1].tmpref.buffer = (void *)&st;
 	op.params[1].tmpref.size = sizeof(st);
@@ -138,8 +151,9 @@ static void get_stats()
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand");
 
-	printf("HEAP: heap_size %u cur_alloc %u max_alloc %u fail %u "
+	printf("%s: heap_size %u cur_alloc %u max_alloc %u fail %u "
 	       "biggest_fail_size %u biggest_fail_used %u\n",
+		heap_to_str(heap_id),
 	        st.size, st.allocated, st.max_allocated, st.num_alloc_fail,
 		st.biggest_alloc_fail, st.biggest_alloc_fail_used);
 
@@ -159,6 +173,7 @@ int main(int argc, char *argv[])
 {
 	int i;
 	struct timespec ts;
+	uint32_t heap_id = 1;
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
@@ -174,6 +189,8 @@ int main(int argc, char *argv[])
 			verbosity++;
 		} else if (!strcmp(argv[i], "heap")) {
 			/* This is the default command */
+		} else if (!strcmp(argv[i], "taheap")) {
+			heap_id = 3;
 		} else {
 			fprintf(stderr, "%s: invalid argument: %s\n",
 				argv[0], argv[i]);
@@ -184,7 +201,7 @@ int main(int argc, char *argv[])
 
 	vverbose("tee-stats version %s\n", TO_STR(VERSION));
 
-	get_stats();
+	get_stats(heap_id);
 
 	return 0;
 }
