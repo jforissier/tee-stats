@@ -1,5 +1,5 @@
 O ?= out
-OPTEE_CLIENT_EXPORT_PATH ?= ../optee_client/out/export
+OPTEE_CLIENT_EXPORT_PATH ?= ../optee_client/out/export/usr
 
 ifeq ($(wildcard $(OPTEE_CLIENT_EXPORT_PATH)/include/tee_client_api.h),)
 $(error OPTEE_CLIENT_EXPORT_PATH is not set or invalid)
